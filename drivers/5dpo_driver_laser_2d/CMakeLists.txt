@@ -134,8 +134,10 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  third_party/ldlidar_sdk/include
   ${catkin_INCLUDE_DIRS}
 )
+add_subdirectory(third_party/ldlidar_sdk)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_YDLIDARX4
@@ -192,6 +194,8 @@ add_dependencies(${PROJECT_NAME}_node
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
+  pthread
+  ldlidar_driver
   ${catkin_LIBRARIES}
 )
 
