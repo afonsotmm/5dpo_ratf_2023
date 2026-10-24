@@ -14,7 +14,7 @@ SdpoDriverLaser2DROS::SdpoDriverLaser2DROS() {
     laser_->setSerialPortParam(serial_port_name_, baud_rate_);
     laser_->setPubLaserData(
         std::bind(&SdpoDriverLaser2DROS::pubLaserData, this));
-    laser_->openSerial();
+    laser_->initialize();
   } catch (std::exception& e) {
     ROS_FATAL("[sdpo_driver_laser_2d] Error reading the node parameters (%s)",
               e.what());
@@ -48,6 +48,7 @@ void SdpoDriverLaser2DROS::readParam() {
         }
       };
 
+  // acrescentar classe LiDAR nova
   nh_private.getParam("model", model_);
   ROS_INFO("[sdpo_driver_laser_2d] Model of the 2D laser scanner: %s",
            model_.c_str());
