@@ -3,16 +3,36 @@
 //
 
 #include "sdpo_driver_laser_2d/LDLIDAR14P.h"
+
+#include <iostream>
+#include <ostream>
+
 #include "sdpo_driver_laser_2d/utils.h"
 
-namespace sdpo_driver_laser_2d {
-
-    // from https://github.com/ldrobotSensorTeam/ldlidar_ros/blob/master/src/main.cpp
+// from https://github.com/ldrobotSensorTeam/ldlidar_ros/blob/master/src/main.cpp
+namespace {
     uint64_t GetTimestamp(void) {
         std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp =
           std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now());
         auto tmp = std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch());
         return ((uint64_t)tmp.count());
+    }
+}
+
+namespace sdpo_driver_laser_2d {
+
+    LDLIDAR14P::~LDLIDAR14P() {
+        stop();
+
+        if (ldlidar_drv_ != nullptr) {
+
+            ldlidar_drv_->Disconnect();
+
+            ldlidar::LDLidarDriverLinuxInterface::Destory(
+                ldlidar_drv_);
+
+            ldlidar_drv_ = nullptr;
+        }
     }
 
     bool LDLIDAR14P::initialize(const bool dbg) {
@@ -40,10 +60,68 @@ namespace sdpo_driver_laser_2d {
         return true;
     }
 
+    void LDLIDAR14P::start() {
+        if (running_) return;
+        if (ldlidar_drv_ == nullptr) return;
+        if (!ldlidar_drv_->Start()) {
+            std::cout << "ldlidar start is fail" << std::endl;
+            return;
+        }
+
+        std::cout << "ldlidar start is success" << std::endl;
+        running_ = true;
+
+        // start scans acquisition thread
+        acquisition_thread_ = std::thread(&LDLIDAR14P::acquisitionLoop, this);
+    }
+
+    void LDLIDAR14P::acquisitionLoop() {
+
+        ldlidar::Points2D laser_scan_points;
+
+        while (running_) {
+            switch (ldlidar_drv_->GetLaserScanData(laser_scan_points, 1500)) {
+
+                case ldlidar::LidarStatus::NORMAL:
+                    std::cout
+                        << "LDLiDAR scan received: "
+                        << laser_scan_points.size()
+                        << " points"
+                        << std::endl;
+                    break;
+
+                case ldlidar::LidarStatus::DATA_TIME_OUT:
+                    std::cerr
+                        << "LDLiDAR data timeout."
+                        << std::endl;
+                    break;
+
+                case ldlidar::LidarStatus::DATA_WAIT:
+                    std::this_thread::sleep_for(
+                        std::chrono::milliseconds(1));
+                    break;
+
+                default:
+                    break;
+            }
+        } // end while
+        
+    }
+
+    void LDLIDAR14P::stop() {
+        if (!running_) return;
+        running_ = false;
+
+        if (acquisition_thread_.joinable()) acquisition_thread_.join();
+        if (ldlidar_drv_!=nullptr) ldlidar_drv_->Stop();
+
+        std::cout << "ldlidar stop is success" << std::endl;
+    }
+
+    void LDLIDAR14P::restart() {
+        stop();
+        start();
+    }
+
 }
 
-
-
-git add *
-git commit -m "initialize LDLIDAR14P"
-git push

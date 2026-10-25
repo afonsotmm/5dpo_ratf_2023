@@ -11,22 +11,29 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <thread>
+#include <atomic>
 
 namespace sdpo_driver_laser_2d {
 
     class LDLIDAR14P : public SdpoDriverLaser2D {
     private:
-        ldlidar::LDLidarDriverLinuxInterface *ldlidar_drv_;
+        ldlidar::LDLidarDriverLinuxInterface *ldlidar_drv_{nullptr};
         ldlidar::LDType lidar_type_ = ldlidar::LDType::LD_14P;
 
+        std::atomic<bool> running_{false};
+        std::thread acquisition_thread_;
+
+        void acquisitionLoop();
+
     public:
-        LDLIDAR14P();
-        ~LDLIDAR14P() override;
+        LDLIDAR14P() = default;
+        ~LDLIDAR14P();
 
         bool initialize(const bool dbg = false) override;
-        void start();
-        void stop();
-        void restart();
+        void start()   override;
+        void stop()    override;
+        void restart() override;
 
     };
 }
