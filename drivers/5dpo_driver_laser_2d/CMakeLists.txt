@@ -116,6 +116,7 @@ catkin_package(
   LIBRARIES
     ${PROJECT_NAME}_YDLIDARX4
     ${PROJECT_NAME}_RPLIDARS2
+    ${PROJECT_NAME}_LDLIDAR14P
   CATKIN_DEPENDS
     roscpp
     rospy
@@ -154,6 +155,13 @@ add_library(${PROJECT_NAME}_RPLIDARS2
   src/${PROJECT_NAME}/SdpoDriverLaser2D.cpp
   src/${PROJECT_NAME}/RPLIDARS2.cpp
 )
+add_library(${PROJECT_NAME}_LDLIDAR14P
+        include/${PROJECT_NAME}/SdpoDriverLaser2D.h
+        include/${PROJECT_NAME}/LDLIDAR14P.h
+        include/${PROJECT_NAME}/utils.h
+        src/${PROJECT_NAME}/SdpoDriverLaser2D.cpp
+        src/${PROJECT_NAME}/LDLIDAR14P.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,6 +175,11 @@ add_dependencies(${PROJECT_NAME}_RPLIDARS2
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${PROJECT_NAME}_gencfg
   ${catkin_EXPORTED_TARGETS}
+)
+add_dependencies(${PROJECT_NAME}_LDLIDAR14P
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${PROJECT_NAME}_gencfg
+        ${catkin_EXPORTED_TARGETS}
 )
 
 ## Declare a C++ executable
