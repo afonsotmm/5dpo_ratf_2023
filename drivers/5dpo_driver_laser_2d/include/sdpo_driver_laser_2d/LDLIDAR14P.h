@@ -35,6 +35,12 @@ namespace sdpo_driver_laser_2d {
         void stop()    override;
         void restart() override;
 
+        // not used methods
+        void processSerialData(unsigned char& ch) override;
+        void processLaserData() override;
+        void printPkgDataInfo() const override;
+        void printLaserData() const override;
+
     };
 }
 

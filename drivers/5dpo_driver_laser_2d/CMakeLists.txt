@@ -139,6 +139,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 add_subdirectory(third_party/ldlidar_sdk)
+set_target_properties(ldlidar_driver PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_YDLIDARX4
@@ -161,6 +164,12 @@ add_library(${PROJECT_NAME}_LDLIDAR14P
         include/${PROJECT_NAME}/utils.h
         src/${PROJECT_NAME}/SdpoDriverLaser2D.cpp
         src/${PROJECT_NAME}/LDLIDAR14P.cpp
+)
+target_link_libraries(${PROJECT_NAME}_LDLIDAR14P
+        PUBLIC
+        ldlidar_driver
+        pthread
+        ${catkin_LIBRARIES}
 )
 
 ## Add cmake target dependencies of the library
@@ -191,6 +200,11 @@ add_executable(${PROJECT_NAME}_node
   src/main.cpp
 )
 
+# testing
+add_executable(test_ldlidar14p
+        src/test_ldlidar14p.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -210,6 +224,12 @@ target_link_libraries(${PROJECT_NAME}_node
   pthread
   ldlidar_driver
   ${catkin_LIBRARIES}
+)
+
+# testing
+target_link_libraries(test_ldlidar14p
+        sdpo_driver_laser_2d_LDLIDAR14P
+        ${catkin_LIBRARIES}
 )
 
 #############

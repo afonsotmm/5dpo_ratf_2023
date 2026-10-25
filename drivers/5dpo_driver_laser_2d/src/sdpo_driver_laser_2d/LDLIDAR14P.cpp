@@ -123,5 +123,27 @@ namespace sdpo_driver_laser_2d {
         start();
     }
 
+
+    // =======================
+    //    not used methods
+    // =======================
+    void LDLIDAR14P::processSerialData(unsigned char& ch)
+    {
+        // serial communication is handled by the LDROBOT SDK.
+    }
+
+    void LDLIDAR14P::processLaserData()
+    {
+        // scan processing is handled by the LDROBOT SDK.
+    }
+
+    void LDLIDAR14P::printPkgDataInfo() const
+    {
+    }
+
+    void LDLIDAR14P::printLaserData() const
+    {
+    }
+
 }
 
