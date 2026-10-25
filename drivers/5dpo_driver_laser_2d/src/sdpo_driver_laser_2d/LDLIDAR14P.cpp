@@ -36,7 +36,6 @@ namespace sdpo_driver_laser_2d {
     }
 
     bool LDLIDAR14P::initialize(const bool dbg) {
-
         ldlidar_drv_ = ldlidar::LDLidarDriverLinuxInterface::Create();
         if (ldlidar_drv_==nullptr) return false;
 
@@ -75,42 +74,10 @@ namespace sdpo_driver_laser_2d {
         acquisition_thread_ = std::thread(&LDLIDAR14P::acquisitionLoop, this);
     }
 
-    void LDLIDAR14P::acquisitionLoop() {
-
-        ldlidar::Points2D laser_scan_points;
-
-        while (running_) {
-            switch (ldlidar_drv_->GetLaserScanData(laser_scan_points, 1500)) {
-
-                case ldlidar::LidarStatus::NORMAL:
-                    std::cout
-                        << "LDLiDAR scan received: "
-                        << laser_scan_points.size()
-                        << " points"
-                        << std::endl;
-                    break;
-
-                case ldlidar::LidarStatus::DATA_TIME_OUT:
-                    std::cerr
-                        << "LDLiDAR data timeout."
-                        << std::endl;
-                    break;
-
-                case ldlidar::LidarStatus::DATA_WAIT:
-                    std::this_thread::sleep_for(
-                        std::chrono::milliseconds(1));
-                    break;
-
-                default:
-                    break;
-            }
-        } // end while
-        
-    }
-
     void LDLIDAR14P::stop() {
         if (!running_) return;
         running_ = false;
+
 
         if (acquisition_thread_.joinable()) acquisition_thread_.join();
         if (ldlidar_drv_!=nullptr) ldlidar_drv_->Stop();
@@ -123,6 +90,114 @@ namespace sdpo_driver_laser_2d {
         start();
     }
 
+    void LDLIDAR14P::acquisitionLoop()
+    {
+        ldlidar::Points2D laser_scan_points;
+
+        while (running_) {
+
+            switch (
+                ldlidar_drv_->GetLaserScanData(
+                    laser_scan_points, 1500))
+            {
+                case ldlidar::LidarStatus::NORMAL:
+
+                    processScan(laser_scan_points);
+                    break;
+
+                case ldlidar::LidarStatus::DATA_TIME_OUT:
+
+                    std::cerr
+                        << "LDLiDAR data timeout."
+                        << std::endl;
+                    break;
+
+                case ldlidar::LidarStatus::DATA_WAIT:
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Same acquisition rate used by the official ROS driver
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(100));
+        }
+    }
+
+    void LDLIDAR14P::processScan(const ldlidar::Points2D& points)
+    {
+        if (dist_data.size() < points.size()) {
+            dist_data.resize(points.size());
+        }
+
+        if (ang_data.size() < points.size()) {
+            ang_data.resize(points.size());
+        }
+
+        data_count = 0;
+
+        size_t zero_points = 0;
+        size_t below_min = 0;
+        size_t above_max = 0;
+
+        for (const auto& point : points) {
+
+            float distance =
+                static_cast<float>(point.distance) / 1000.0f;
+
+            float angle =
+                normAngRad(
+                    -point.angle * M_PIf32 / 180.0f
+                );
+
+            if (distance == 0.0f) {
+                zero_points++;
+            }
+
+            if (dist_range_check_ && distance < dist_min_) {
+                below_min++;
+            }
+
+            if (dist_range_check_ && distance > dist_max_) {
+                above_max++;
+            }
+
+            bool is_sample_ok = true;
+
+            if (dist_range_check_) {
+                if (distance < dist_min_ ||
+                    distance > dist_max_) {
+                    is_sample_ok = false;
+                    }
+            }
+
+            if (ang_range_check_) {
+                if (angle < ang_min_ ||
+                    angle > ang_max_) {
+                    is_sample_ok = false;
+                    }
+            }
+
+            if (is_sample_ok) {
+                dist_data[data_count] = distance;
+                ang_data[data_count] = angle;
+                data_count++;
+            }
+        }
+
+        std::cout
+            << "Raw: " << points.size()
+            << " | valid: " << data_count
+            << " | zero: " << zero_points
+            << " | below min: " << below_min
+            << " | above max: " << above_max
+            << std::endl;
+
+        if (pubLaserData) {
+            pubLaserData();
+        }
+    }
 
     // =======================
     //    not used methods

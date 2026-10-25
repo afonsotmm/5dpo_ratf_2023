@@ -16,6 +16,8 @@
 
 namespace sdpo_driver_laser_2d {
 
+    const std::string kSdpoDriverLaser2DLDLIDAR14PStr = "ldlidar14p";
+
     class LDLIDAR14P : public SdpoDriverLaser2D {
     private:
         ldlidar::LDLidarDriverLinuxInterface *ldlidar_drv_{nullptr};
@@ -25,6 +27,7 @@ namespace sdpo_driver_laser_2d {
         std::thread acquisition_thread_;
 
         void acquisitionLoop();
+        void processScan(const ldlidar::Points2D& points);
 
     public:
         LDLIDAR14P() = default;
