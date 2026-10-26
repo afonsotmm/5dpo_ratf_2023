@@ -135,10 +135,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
-  third_party/ldlidar_sdk/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ldlidar_sdk/include
   ${catkin_INCLUDE_DIRS}
 )
 add_subdirectory(third_party/ldlidar_sdk)
+target_include_directories(ldlidar_driver PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ldlidar_sdk/include
+)
 set_target_properties(ldlidar_driver PROPERTIES
         POSITION_INDEPENDENT_CODE ON
 )
